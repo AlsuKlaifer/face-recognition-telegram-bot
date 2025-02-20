@@ -6,8 +6,8 @@ import cv2
 # Получение переменных окружения
 PHOTO_BUCKET = os.getenv("PHOTOS_BUCKET_NAME")
 QUEUE_URL = os.getenv("QUEUE_ID")
-ACCESS_KEY = os.getenv("SA_ACCESS_KEY")
-SECRET_KEY = os.getenv("SA_SECRET_KEY")
+ACCESS_KEY = os.getenv("ACCESS_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # Инициализация клиента для работы с очередью
 print("Инициализация клиента SQS...")

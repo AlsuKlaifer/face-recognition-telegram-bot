@@ -8,8 +8,8 @@ resource "yandex_function" "func_recognizer" {
 
   environment = {
     "PHOTOS_BUCKET_NAME" = var.PHOTOS_BUCKET_NAME
-    "SA_ACCESS_KEY"      = yandex_iam_service_account_static_access_key.sa-static-key.access_key
-    "SA_SECRET_KEY"      = yandex_iam_service_account_static_access_key.sa-static-key.secret_key
+    "ACCESS_KEY"      = yandex_iam_service_account_static_access_key.sa-static-key.access_key
+    "SECRET_KEY"      = yandex_iam_service_account_static_access_key.sa-static-key.secret_key
     "QUEUE_ID"           = yandex_message_queue.task_queue.id
   }
 

@@ -7,11 +7,10 @@ resource "yandex_function" "func_face_cut" {
   user_hash          = archive_file.face_cutter_code.output_sha256
 
   environment = {
-    "TELEGRAM_BOT_TOKEN" = var.TELEGRAM_BOT_TOKEN
     "PHOTOS_BUCKET_NAME" = var.PHOTOS_BUCKET_NAME
     "FACES_BUCKET_NAME"  = var.FACES_BUCKET_NAME
-    "SA_ACCESS_KEY"      = yandex_iam_service_account_static_access_key.sa-static-key.access_key
-    "SA_SECRET_KEY"      = yandex_iam_service_account_static_access_key.sa-static-key.secret_key
+    "ACCESS_KEY"      = yandex_iam_service_account_static_access_key.sa-static-key.access_key
+    "SECRET_KEY"      = yandex_iam_service_account_static_access_key.sa-static-key.secret_key
   }
 
   content {
