@@ -85,6 +85,9 @@ def fetch_unknown_faces():
 def rename_face(name, file_id):
     try:
         old_filename = file_id
+        if "face-" not in old_filename:
+            raise ValueError(f"Invalid filename format: {old_filename}. Expected 'face-' prefix.")
+
         template_file_name = old_filename.split("face-")[1]
         new_filename = f"{name.lower()}-{template_file_name}"
         
@@ -97,7 +100,7 @@ def rename_face(name, file_id):
         storage_client.delete_object(Bucket=FACES_BUCKET, Key=old_filename)
     except Exception as e:
         print(f"Error renaming face: {e}")
-        raise e
+        return
 
 def find_faces(name):
     try:
@@ -107,7 +110,7 @@ def find_faces(name):
             return []
 
         photo_urls = [
-            f"{API_GATEWAY_URL}fetchOriginal?key={obj['Key'].split('__')[1]}"
+            f"{API_GATEWAY_URL}fetchOriginal?key={obj['Key'].split('___')[1]}"
             for obj in response["Contents"]
         ]
 
@@ -161,7 +164,7 @@ def handler(event, context):
                 elif error == None:
                     print(photo_url)
                     print(123)
-                    send_photo(chat_id, photo_url, f"Ответом на это сообщение пришлите как зовут этого человека\n{photo_url.split("?key=")[1]}")
+                    send_photo(chat_id, photo_url, f"Ответом на это сообщение пришлите как зовут этого человека\n\n{photo_url.split("?key=")[1]}")
                     return
             elif text.startswith("/find"):
                 parts = text.split(maxsplit=1)
@@ -170,14 +173,28 @@ def handler(event, context):
                     return
 
                 name = parts[1].strip()
-                send_message(chat_id, f"ПОКАЗЫВАЮ {name}")
+                photo_urls = find_faces(name)
+
+                for url in photo_urls:
+                    send_photo(chat_id, f"{url}", "")
                 return
             else:
                 send_message(chat_id, "Не могу найти такую команду")
                 return
         else:
-            send_message(chat_id, text)
-            return
+            if reply_message := message.get("reply_to_message", {}):
+                name = message.get("text")
+                file_id = reply_message.get("caption").split("\n\n")[1]
+
+                if not file_id:
+                    send_message(chat_id, "Нужно прислать имя ответом на сообщение")
+
+                rename_face(name, file_id)
+                send_message(chat_id, f"Имя {name} присвоено данному человеку.\n")    
+                return
+            else:
+                send_message(chat_id, text)
+                return
 
     else:
         send_message(chat_id, "Напиши /start")
