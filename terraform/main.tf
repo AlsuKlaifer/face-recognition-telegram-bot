@@ -43,6 +43,78 @@ resource "yandex_function" "cloud_func" {
   }
 }
 
+resource "yandex_api_gateway" "gateway" {
+  name        = "image-api-gateway"
+  description = "API Gateway для доступа к изображениям в Object Storage"
+
+  spec = <<EOT
+  openapi: 3.0.0
+  info:
+    title: Image API
+    version: 1.0.0
+  paths:
+    /fetchImage:
+      get:
+        summary: "Получить изображение по ключу"
+        parameters:
+          - name: key
+            in: query
+            required: true
+            schema:
+              type: string
+        responses:
+          "200":
+            description: "Изображение"
+            content:
+              image/jpeg:
+                schema:
+                  type: string
+                  format: binary
+          "400":
+            description: "Ошибка: ключ не указан"
+          "404":
+            description: "Изображение не найдено"
+        x-yc-apigateway-integration:
+          type: object_storage
+          bucket: "${var.FACES_BUCKET_NAME}"
+          object: "{key}"
+          service_account_id: "${yandex_iam_service_account.service_acc.id}"
+          headers:
+              Content-Type: "{object.response.content-type}"
+              Content-Disposition: "inline"
+
+    /fetchOriginal:
+      get:
+        summary: "Получить оригинальное изображение по имени"
+        parameters:
+          - name: key
+            in: query
+            required: true
+            schema:
+              type: string
+        responses:
+          "200":
+            description: "Изображение"
+            content:
+              image/jpeg:
+                schema:
+                  type: string
+                  format: binary
+          "400":
+            description: "Ошибка: ключ не указан"
+          "404":
+            description: "Изображение не найдено"
+        x-yc-apigateway-integration:
+          type: object_storage
+          bucket: "${var.PHOTOS_BUCKET_NAME}"
+          object: "{key}"
+          service_account_id: "${yandex_iam_service_account.service_acc.id}"
+          headers:
+              Content-Type: "{object.response.content-type}"
+              Content-Disposition: "inline"
+  EOT
+}
+
 resource "archive_file" "telegram-bot-code" {
   type        = "zip"
   source_dir  = "../telegram-bot"

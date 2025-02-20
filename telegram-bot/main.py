@@ -11,7 +11,10 @@ TELEGRAM_FILE_URL = f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}"
 STORAGE_ACCESS_KEY = os.getenv("STORAGE_ACCESS_KEY")
 STORAGE_SECRET_KEY = os.getenv("STORAGE_SECRET_KEY")
 
-PHOTOS_BUCKET_NAME = os.getenv("PHOTOS_BUCKET_NAME")
+PHOTOS_BUCKET = os.getenv("PHOTOS_BUCKET_NAME")
+FACES_BUCKET = os.getenv("FACES_BUCKET_NAME")
+
+API_GATEWAY_URL = os.getenv("API_GATEWAY_URL")
 
 storage_session = boto3.session.Session()
 storage_client = storage_session.client(
@@ -44,7 +47,7 @@ def download_image(file_path):
 def upload_image(key, image):
     try:
         storage_client.put_object(
-            Bucket=PHOTOS_BUCKET_NAME,
+            Bucket=PHOTOS_BUCKET,
             Key=f"{key}.jpeg",
             Body=image,
             ContentType="image/jpeg"
@@ -62,17 +65,17 @@ def handle_getface_command():
     unknown_faces = fetch_unknown_faces()
 
     if not unknown_faces:
-        return None, "No new photos found"
+        return None, "Новых фото нет"
 
     face_key = unknown_faces[0]
-    photo_url = f"{API_GATEWAY_URL}?key={face_key}"
+    photo_url = f"{API_GATEWAY_URL}fetchImage?key={face_key}"
 
     return photo_url, None
 
 def fetch_unknown_faces():
     unknown_faces = []
     try:
-        response = storage_client.list_objects_v2(Bucket=FACES_BUCKET, Prefix="unknown-")
+        response = storage_client.list_objects_v2(Bucket=FACES_BUCKET, Prefix="face-")
         if "Contents" in response:
             unknown_faces = [obj['Key'] for obj in response['Contents']]
     except Exception as e:
@@ -82,7 +85,7 @@ def fetch_unknown_faces():
 def rename_face(name, file_id):
     try:
         old_filename = file_id
-        template_file_name = old_filename.split("unknown-")[1]
+        template_file_name = old_filename.split("face-")[1]
         new_filename = f"{name.lower()}-{template_file_name}"
         
         storage_client.copy_object(
@@ -104,7 +107,7 @@ def find_faces(name):
             return []
 
         photo_urls = [
-            f"{API_GATEWAY_URL}getPhotoByName?key={obj['Key'].split('--')[1]}"
+            f"{API_GATEWAY_URL}fetchOriginal?key={obj['Key'].split('__')[1]}"
             for obj in response["Contents"]
         ]
 
@@ -117,6 +120,12 @@ def find_faces(name):
 def send_message(chat_id, text):
     url = f"{TELEGRAM_API_URL}/sendMessage"
     data = {'chat_id': chat_id, 'text': text}
+    return requests.post(url, data=data)
+
+def send_photo(chat_id, photo_url, caption):
+    url = f"{TELEGRAM_API_URL}/sendPhoto"
+    print(photo_url)
+    data = {'chat_id': chat_id, 'photo': photo_url, 'caption': caption}
     return requests.post(url, data=data)
 
 def process_message(chat_id, text):
@@ -144,8 +153,16 @@ def handler(event, context):
                 send_message(chat_id, "Бот для распознования лиц. Отправь фото")
                 return
             elif text.startswith("/getfaces"):
-                send_message(chat_id, "ПОЛУЧАЮ ЛИЦА")
-                return
+                print("/getfaces")
+                photo_url, error = handle_getface_command()
+                if error:
+                    send_message(chat_id, error)
+                    return
+                elif error == None:
+                    print(photo_url)
+                    print(123)
+                    send_photo(chat_id, photo_url, f"Ответом на это сообщение пришлите как зовут этого человека\n{photo_url.split("?key=")[1]}")
+                    return
             elif text.startswith("/find"):
                 parts = text.split(maxsplit=1)
                 if len(parts) < 2 :
