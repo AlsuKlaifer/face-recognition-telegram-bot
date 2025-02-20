@@ -28,7 +28,7 @@ resource "yandex_function" "func_recognizer" {
 
 resource "archive_file" "face_recognition_code" {
   type        = "zip"
-  source_dir  = "../face-recognition"
+  source_dir  = "../code/face-recognition"
   output_path = "../archives/face-recognition.zip"
 }
 

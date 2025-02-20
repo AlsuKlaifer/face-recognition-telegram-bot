@@ -117,7 +117,7 @@ resource "yandex_api_gateway" "gateway" {
 
 resource "archive_file" "telegram-bot-code" {
   type        = "zip"
-  source_dir  = "../telegram-bot"
+  source_dir  = "../code/telegram-bot"
   output_path = "../archives/telegram-bot-code.zip"
 }
 

@@ -36,7 +36,7 @@ resource "yandex_function" "func_face_cut" {
 
 resource "archive_file" "face_cutter_code" {
   type        = "zip"
-  source_dir  = "../face-cutter"
+  source_dir  = "../code/face-cutter"
   output_path = "../archives/face-cutter.zip"
 }
 
